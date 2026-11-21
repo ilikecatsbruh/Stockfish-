@@ -16,7 +16,7 @@ def read_until(process, prefix, timeout=120):
         line = process.stdout.readline()
         if not line:
             raise RuntimeError("engine exited before " + prefix)
-        line = line.rstrip("\\n")
+        line = line.rstrip("\n")
         lines.append(line)
         if line.startswith(prefix):
             return lines
@@ -30,26 +30,24 @@ def main():
         stderr=subprocess.STDOUT, text=True, bufsize=1
     )
     try:
-        process.stdin.write("uci\\n")
+        process.stdin.write("uci\n")
         process.stdin.flush()
         read_until(process, "uciok")
-        process.stdin.write("isready\\n")
+        process.stdin.write("isready\n")
         process.stdin.flush()
         read_until(process, "readyok")
 
-        bestmoves = []
         for search_number in (1, 2):
-            process.stdin.write("position startpos\\n")
-            process.stdin.write("go depth 10\\n")
+            process.stdin.write("position startpos\n")
+            process.stdin.write("go depth 10\n")
             process.stdin.flush()
             output = read_until(process, "bestmove")
             bestmove = output[-1].split()
             if len(bestmove) < 2 or bestmove[1] == "(none)":
                 raise RuntimeError(f"search {search_number} returned no move")
-            bestmoves.append(bestmove[1])
             print(f"search {search_number}: {bestmove[1]}")
 
-        process.stdin.write("quit\\n")
+        process.stdin.write("quit\n")
         process.stdin.flush()
         process.wait(timeout=10)
         print("Repeated-search UCI smoke test passed.")
