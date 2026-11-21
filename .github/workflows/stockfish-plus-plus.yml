@@ -1,0 +1,33 @@
+name: Stockfish++ validation
+
+on:
+  push:
+    branches: [master, stockfish-plus-plus]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Stockfish
+        run: make -C src -j2 build ARCH=x86-64
+
+      - name: Verify start-position perft(5)
+        shell: bash
+        run: |
+          output="$(printf 'position startpos\ngo perft 5\nquit\n' | ./src/stockfish)"
+          echo "$output"
+          grep -Eq 'Nodes searched: 4865609$' <<< "$output"
+
+      - name: Verify reusable transposition table across searches
+        run: python3 tests/uci_cache_smoke.py ./src/stockfish
+
+      - name: Run built-in benchmark
+        run: ./src/stockfish bench
